@@ -1,5 +1,5 @@
-
-const commands = [{
+const commands = [
+    /*{
     name: 'question_button',
     description: 'Gives the question with the buttons to answer',
     /*options: [{
@@ -17,11 +17,11 @@ const commands = [{
                 value: 'world'
             }
         ]
-    }]*/
-},
+    }]
+},*/
     {
-        name: 'question_select',
-        description: 'Gives the question with the select menu to answer',
+        name: 'start',
+        description: 'Start the bot',
     }
 ];
 
@@ -52,14 +52,24 @@ const questions = [
 
 ]
 
+const smellsNames = {
+    "LW": "Lone Wolf",
+    "PD": "Prima Donna",
+    "BC": "Black Cloud"
+}
+
 const gamma = {
-    "strDis": {value: -1},
-    "dis" : {value: -0.5},
-    "neutral" : {value: 0},
-    "agree" : {value: 0.5},
-    "strAgree" : {value: 1}
+    "strDis": {value: 0},
+    "dis": {value: 0},
+    "neutral": {value: 0},
+    "agree": {value: 0.5},
+    "strAgree": {value: 1}
 };
+
+const soglia = 1.5;
 
 module.exports.commands = commands;
 module.exports.questions = questions;
 module.exports.gamma = gamma;
+module.exports.soglia = soglia;
+module.exports.smellsNames = smellsNames;
