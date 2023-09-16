@@ -2,7 +2,7 @@
   "name": "bot-tesi",
   "version": "1.0.0",
   "description": "un semplice bot da utilizzare per le validazioni dei contributor in una community open source",
-  "main": "app.js",
+  "main": "toast.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
