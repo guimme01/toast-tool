@@ -32,20 +32,23 @@ pie(gender_counts, labels = paste0(names(gender_counts), "\n  ", round(percentag
 nazionalita <- survey_response[4]
 frequenze <- table(nazionalita)
 
-soglia_percentuale <- 1 
+soglia_percentuale <- 0.8 
 
 other_nationalities <- names(frequenze[frequenze / sum(frequenze) * 100 < soglia_percentuale])
 
 country_updated <- nazionalita %>% mutate ( Nationality = ifelse(Nationality %in% other_nationalities, "Others", Nationality))
 
-counts_country <- table(country_updated)
+counts_country <- sample(table(country_updated))
 percentages_country <- prop.table(counts_country) * 100
 
 colors <- rainbow(length(percentages_country))
+par(bg=NA)
 
 pie(counts_country, labels = paste0(names(counts_country), "  ",round(percentages_country, 1), "%"),
     main = "Nazione di provenienza del campione", col = rainbow(length(counts_country))) # questi colori sono da rivedere
 
+dev.copy(png,'myplot.png')
+dev.off()
 
 #Esperienza nel management del campione
 
@@ -60,10 +63,12 @@ cs_familiarities <- survey_response[12]
 cs_counts <- table(cs_familiarities)
 
 percentages_cs <- prop.table(cs_counts) * 100
+par(bg=NA)
 
 pie(cs_counts, labels = paste0(names(cs_counts), "\n  ", round(percentages_cs, 1), "%"),
     main = "Familiarità con i Community smells",col = rainbow(length(cs_counts))) # questi colori sono da rivedere
-
+dev.copy(png,'myplot1.png')
+dev.off()
 data <- table(survey_response$CS_Familiarities)
 print(data)
 limite_superiore <- max(data) +10
@@ -100,9 +105,11 @@ gender_counts <- table(survey_response_managers$Gender)
 
 percentages <- prop.table(gender_counts) * 100
 
+par(bg=NA)
 pie(gender_counts, labels = paste0(names(gender_counts), "\n  ", round(percentages, 1), "%"),
     main = "Distribution of Gender Values", col = rainbow(length(gender_counts))) # questi colori sono da rivedere
-
+dev.copy(png,'myplot2.png')
+dev.off()
 
 
 # Familiarità con i CS                               
@@ -111,9 +118,11 @@ cs_counts <- table(cs_familiarities)
 
 percentages_cs <- prop.table(cs_counts) * 100
 
+par(bg=NA)
 pie(cs_counts, labels = paste0(names(cs_counts), "\n  ", round(percentages_cs, 1), "%"),
     main = "Familiarità dei manager con i Community Smells", col = rainbow(length(cs_counts))) # questi colori sono da rivedere
-
+dev.copy(png,'myplot3.png')
+dev.off()
 
 
 #Esperienza con i CS
@@ -138,10 +147,12 @@ counts_country <- table(country_updated)
 percentages_country <- prop.table(counts_country) * 100
 
 colors <- rainbow(length(percentages_country))
+par(bg=NA)
 
 pie(counts_country, labels = paste0(names(counts_country), "  ",round(percentages_country, 1), "%"),
-    main = "Nazione di provenienza delle figure manageriali", col = rainbow(length(counts_country))) # questi colori sono da rivedere
-
+    ,main = "Nazionalità delle figure manageriali", col = rainbow(length(counts_country))) # questi colori sono da rivedere
+dev.copy(svg,'myplot5.svg')
+dev.off()
 #Prolific ID Managers
 
 prolificID <- survey_response_managers[2]

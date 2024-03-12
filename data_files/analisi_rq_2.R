@@ -29,7 +29,7 @@ mean(exp_LW$Experience_LoneWolf)
 #LW Weights
 weights_lw <- lone_wolf_frequency_experience$Experience_LoneWolf
 
-#LW EXPR  Plot
+#LW EXPRPlot
 pie_value_converted <- practitioners_response[3]
 
 scala_likert <- c("Never", "Rarely", "Sometimes", "Often", "Always")
@@ -98,12 +98,15 @@ barplot(tt, names.arg = scala_likert, col = colori_gradiente, main = "How much d
 #    main = "In your experience, how much have you encountered a Lone Wolf in the past?", col = rainbow(length(values_pie))) # questi colori sono da rivedere
 
 
+#LW Weights
+weights_lw <- lone_wolf_frequency_experience$Experience_LoneWolf
+
 #LW Q1 Mean
 values <- practitioners_response$LoneWolfQ1
 media_pesata_lw_q1 <- weighted.mean(values, weights_lw)
 print(media_pesata_lw_q1)
 
-#LW Q1 Varianza
+#LW Q1 DEV.ST
 varianza <- sum((values - media_pesata_lw_q1)^2) / length(values)
 dev_st_lw_q1 <- sqrt(varianza)
 print(dev_st_lw_q1)
@@ -136,8 +139,11 @@ ei <- sum(pie_value_converted$LoneWolfQ1 == "Extremely Indicative")
 print(ei)
 
 tt <- c(ni,si,mi,qi,ei)
-barplot(tt, names.arg = scala_indicative, col = colori_gradiente, cex.main = 0.8, main = "How significantly does 'The contributor has insufficient communication with the team'\n indicates the presence of the Lone Wolf Community Smell in your experience?")
+par(bg=NA)
 
+barplot(tt, names.arg = scala_indicative, col = colori_gradiente, cex.main = 0.8, main = "How significantly does 'The contributor has insufficient communication with the team'\n indicates the presence of the Lone Wolf Community Smell in your experience?")
+dev.copy(png,'lw.png')
+dev.off()
 #pie_values <- table(pie_value_converted$LoneWolfQ1)
 
 percentages <- prop.table(pie_values) * 100

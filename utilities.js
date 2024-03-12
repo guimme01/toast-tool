@@ -1,24 +1,4 @@
 const commands = [
-    /*{
-    name: 'question_button',
-    description: 'Gives the question with the buttons to answer',
-    /*options: [{
-        name: 'input',
-        type: 3,
-        description: 'The input to echo back',
-        required: true,
-        /*choices: [
-            {
-                name: 'Hello',
-                value: 'hello'
-            },
-            {
-                name: 'World',
-                value: 'world'
-            }
-        ]
-    }]
-},*/
     {
         name: 'start',
         description: 'Start the bot',
@@ -76,10 +56,7 @@ const gamma = {
     "strAgree": {value: 1}
 };
 
-const soglia = 1.5;
-
 module.exports.commands = commands;
 module.exports.questions = questions;
 module.exports.gamma = gamma;
-module.exports.soglia = soglia;
 module.exports.smellsNames = smellsNames;
