@@ -146,7 +146,7 @@ async function executeChatInteraction(interaction, jsonUserData){
         // and save it in the json file if it is not already present
         let user = getUserById(interaction.user.id, jsonUserData);
         if (user === undefined) {
-            saveNewUser(interaction.user.id);
+            saveNewUser(interaction.user.id, jsonUserData);
         }
     }
 }
@@ -202,7 +202,7 @@ function getCollabsByUserID(userId, jsonUserData) {
     let user = jsonUserData.users.find((el) => {
         return el.userId === userId
     });
-    if (user.length === 0) {
+    if (user === undefined) {
         saveNewUser(userId, jsonUserData);
         return [];
     } else

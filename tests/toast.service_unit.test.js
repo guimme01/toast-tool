@@ -88,6 +88,7 @@ describe("executeInteractionSelectMenu", () => {
         mockInteraction.user = user;
 
         global.choicesIds = new Map();
+        jest.spyOn(global.choicesIds, 'delete')
         await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
         expect(global.choicesIds.delete).not.toHaveBeenCalled();
         expect(mockInteraction.reply).not.toHaveBeenCalled();
