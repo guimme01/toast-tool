@@ -79,7 +79,9 @@ async function executeInteractionButtons(smellValues,interaction){
     });
     // add the id of the message to the map of the messages to delete them later
     global.messagesIds.get(interaction.user.id).push(interaction.message.id);
-    execSync('sleep 1');
+    setTimeout(() => {
+        console.log('1 second timeout');
+    }, 1000);
 
     global.index = global.index + 1;
     // if there are still questions to ask, ask the next one
@@ -91,7 +93,9 @@ async function executeInteractionButtons(smellValues,interaction){
         console.log(smellValues);
 
         // sleep for 1 second to let the user realize that the interaction is finished
-        execSync('sleep 1');
+        setTimeout(() => {
+            console.log('1 second timeout');
+        }, 1000);
 
         // delete all the messages sent by the bot during the interaction
         if (global.messagesIds.get(interaction.user.id) !== undefined) {
