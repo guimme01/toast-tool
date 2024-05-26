@@ -2,6 +2,12 @@ const fs = require("fs");
 const {questions} = require("./utilities");
 const file = "users.json"
 
+/**
+ * 
+ * This function saves a new user (with a manager role) into the file users.json
+ * @param {*} userId - The user's ID obtained from the Discord information.
+ * @returns the user that has been added
+ */
 function saveNewUser(userId) {
     let newUser = {userId: userId, collaborators: []};
     let data = getData();
@@ -12,6 +18,15 @@ function saveNewUser(userId) {
 
     return newUser;
 }
+
+/**
+ * This function will update a map that contains all the smell values for a collaborator 
+ * @param {*} interaction - button that has been clicked
+ * @param {*} index - index of the question that the manager is answering
+ * @param {*} gamma - undefined
+ * @param {*} smellValues - hashMap that has a manager as a key and the value will be a new hashMap that will contain all the
+ *                          smell value for each question
+ */
 
 function updateMap(interaction, index, gamma, smellValues) {
     let userSmell = smellValues.get(interaction.user.id);
@@ -24,6 +39,14 @@ function updateMap(interaction, index, gamma, smellValues) {
     let value = gamma[interaction.customId].value * questions[index].weight + prevValue;
     userSmell.set(questions[index].smell, value);
 }
+
+/**
+ * This function saves a new user (with a collaborator role) into the file users.json
+ * @param {*} userId - the collaborator's manager id
+ * @param {*} name - the collaborator's name
+ * @param {*} surname - the collaborator's surname
+ * @param {*} id - the collaborator's id
+ */
 
 function saveNewCollaborator(userId, name, surname, id) {
     data = getData();
@@ -40,6 +63,10 @@ function saveNewCollaborator(userId, name, surname, id) {
     writeData(jsonString);
 }
 
+/**
+ * This function reads the file users.json and converts it into JSON format
+ * @returns the converted file
+ */
 function getData(){
     try {
         const data = fs.readFileSync(file, "utf-8");
@@ -50,6 +77,10 @@ function getData(){
     }
 }
 
+/**
+ * This function writes on the file users.json a new user
+ * @param {*} jsonString - the user that will be written in the users.json file
+ */
 function writeData(jsonString){
     fs.writeFile(file, jsonString, 'utf8', (err) => {
         if (err) {
@@ -60,6 +91,12 @@ function writeData(jsonString){
     });
 }
 
+/**
+ * This function will get from the users.json file the list of collaborators of a manager. 
+ * If the user is not found, it will be written inside it.
+ * @param {*} userId - the manager's id
+ * @returns the list of the collaborators if found or an empty list if not found
+ */
 function getCollaborators(userId){
     let data = getData();
 
@@ -74,11 +111,22 @@ function getCollaborators(userId){
         return user.collaborators;
 }
 
+/**
+ * This function will find and get a specific collaborator in the list of a manager's collaborators
+ * @param {*} userId - the manager's id
+ * @param {*} collabId - the collaborator's id
+ * @returns the collaborator's data or undefined if not found.
+ */
 function getCollaborator(userId, collabId){
     let collabs = getCollaborators(userId);
     return collabs.find((el) => el.userId === collabId);
 }
 
+/**
+ * This function will find and get a specific user into the users.json file.
+ * @param {*} userId - Th user's id
+ * @returns the users if found, undefined if not found.
+ */
 function getUser(userId){
     let data = getData();
 
