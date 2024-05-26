@@ -4,10 +4,10 @@ const {likertScale} = require("./utilities_button");
 const {row, modal} = require("./utilities_menu");
 const fs = require("fs");
 const {execSync} = require("child_process");
-const {saveNewUser, saveNewCollaborator, updateMap} = require("./toast.model");
+const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators} = require("./toast.model");
 
 
-async function executeInteractionSelectMenu(interaction, jsonUserData){
+async function executeInteractionSelectMenu(interaction){
     // if the interaction is a select menu interaction (and so it is processing the collaborators list)
     // get the id of the collaborator selected by the user
     let choice = interaction.values[0];
@@ -18,7 +18,7 @@ async function executeInteractionSelectMenu(interaction, jsonUserData){
         // get the id of the collaborator selected by the user
         let id = choice.split(" ")[1];
         // get the collaborator data from the json file
-        let collaborator = jsonUserData.users.find((el) => el.userId === interaction.user.id).collaborators.find((el) => el.collaboratorId === id)
+        let collaborator = getCollaborator(interaction.user.id, id);
 
         await interaction.reply({
             content: `Beginning analysis of ${collaborator.name} ${collaborator.surname}`,
@@ -38,7 +38,7 @@ async function executeInteractionSelectMenu(interaction, jsonUserData){
             case 'start':
                 await removeMsg(global.choicesIds, interaction);
 
-                let collaborators = getCollabsByUserID(interaction.user.id, jsonUserData);
+                let collaborators = getCollaborators(interaction.user.id)
                 if (collaborators.length !== 0) {
                     let select = buildCollabsList(collaborators);
                     await interaction.reply({
@@ -137,7 +137,7 @@ async function executeInteractionButtons(smellValues,interaction){
     }
 }
 
-async function executeChatInteraction(interaction, jsonUserData){
+async function executeChatInteraction(interaction){
     if (interaction.commandName === 'start') {
         await interaction.reply({
             content: 'Hi! Welcome to T.O.A.S.T. (Team Observation and Smells Tracking Tool).\n' +
@@ -148,14 +148,14 @@ async function executeChatInteraction(interaction, jsonUserData){
         })
         // get the discordId of the user that started the interaction
         // and save it in the json file if it is not already present
-        let user = getUserById(interaction.user.id, jsonUserData);
+        let user = getUser(interaction.user.id);
         if (user === undefined) {
-            saveNewUser(interaction.user.id, jsonUserData);
+            saveNewUser(interaction.user.id);
         }
     }
 }
 
-async function executeModalInteraction(interaction, jsonUserData){
+async function executeModalInteraction(interaction){
     console.log(interaction.fields.fields);
     await interaction.reply({
         content: 'Data saved',
@@ -168,7 +168,7 @@ async function executeModalInteraction(interaction, jsonUserData){
     let surname = interaction.fields.fields.get('surnameInput').value;
     let id = interaction.fields.fields.get('idInput').value;
 
-    saveNewCollaborator(interaction.user.id, name, surname, id, jsonUserData);
+    saveNewCollaborator(interaction.user.id, name, surname, id);
 }
 async function removeMsg(list, interaction) {
     let row = list.get(interaction.user.id);
@@ -202,32 +202,10 @@ function buildCollabsList(collaborators) {
         .addComponents(select);
 }
 
-function getCollabsByUserID(userId, jsonUserData) {
-    let user = jsonUserData.users.find((el) => {
-        return el.userId === userId
-    });
-    if (user === undefined) {
-        saveNewUser(userId, jsonUserData);
-        return [];
-    } else
-        return user.collaborators;
-}
-
 async function nextQuestionButton(interaction, index) {
-
     await interaction.followUp({
         content: questions[index].content,
         components: [likertScale],
-    });
-}
-
-
-
-
-
-function getUserById(userId, jsonUserData) {
-    return jsonUserData.users.find((el) => {
-        return el.userId === userId
     });
 }
 

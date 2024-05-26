@@ -8,8 +8,6 @@ const {REST} = require('@discordjs/rest');
 const {commands, questions, gamma, smellsNames} = require('./utilities');
 const fs = require('fs');
 const {executeInteractionSelectMenu, executeInteractionButtons, executeChatInteraction, executeModalInteraction} = require("./toast.service");
-let jsonUserData = {};
-
 
 // the main function that manages the bot
 async function main() {
@@ -41,8 +39,6 @@ async function main() {
 
         client.login(process.env.DISCORD_TOKEN).then(() => {
             console.log('Bot is ready');
-            const data = fs.readFileSync('users.json', 'utf8');
-            jsonUserData = JSON.parse(data);
         });
 
         client.on('interactionCreate', async interaction => {
@@ -54,7 +50,7 @@ async function main() {
 
             // if the interaction is a command (/start) and the bot is not already interacting with the user
             if (interaction.isChatInputCommand()) {
-                await executeChatInteraction(interaction, jsonUserData)
+                await executeChatInteraction(interaction)
             }
             // if the interaction is a button interaction
             else if (interaction.isButton()) {
@@ -62,11 +58,11 @@ async function main() {
             }
             // if the interaction is a select menu interaction
             else if (interaction.isStringSelectMenu()) {
-                await executeInteractionSelectMenu(interaction, jsonUserData)
+                await executeInteractionSelectMenu(interaction)
             }
             // else, if the interaction is a modal interaction (and so it is processing the data of the new collaborator)
             else if (interaction.isModalSubmit()) {
-                await executeModalInteraction(interaction, jsonUserData)
+                await executeModalInteraction(interaction)
             }
         });
     } catch (error) {
