@@ -6,6 +6,10 @@ const {
     TextInputBuilder,
     TextInputStyle
 } = require("discord.js");
+
+/**
+ * String to show in the main menu
+ */
 const select = new StringSelectMenuBuilder()
     .setCustomId('starter')
     .setPlaceholder('Which action you want to perform?')
@@ -17,22 +21,24 @@ const select = new StringSelectMenuBuilder()
         .setDescription('Start the analysis questions. Select a collaborator to start ')
         .setValue('start'),);
 
+/**
+ * This constant creates an action row that contains the select menu for the choose of the operation
+ */
 const row = new ActionRowBuilder()
     .addComponents(select);
 
+    /**
+ * This constant creates a dialog box that contains the form to add a new collaborator
+ */
 const modal = new ModalBuilder()
     .setCustomId('myModal')
     .setTitle('Add a new collaborator to your team')
 
-// Add components to modal
 
-// Create the text input components
 modal.addComponents(
     new ActionRowBuilder().addComponents(new TextInputBuilder()
         .setCustomId('nameInput')
-        // The label is the prompt the user sees for this input
         .setLabel("Name of the collaborator")
-        // Short means only a single line of text
         .setStyle(TextInputStyle.Short)
     )
 
@@ -40,18 +46,14 @@ modal.addComponents(
 ).addComponents(
     new ActionRowBuilder().addComponents(new TextInputBuilder()
         .setCustomId('surnameInput')
-        // The label is the prompt the user sees for this input
         .setLabel("Surname of the collaborator")
-        // Short means only a single line of text
         .setStyle(TextInputStyle.Short)
     )
 
 ).addComponents(
     new ActionRowBuilder().addComponents(new TextInputBuilder()
         .setCustomId('idInput')
-        // The label is the prompt the user sees for this input
         .setLabel("ID of the collaborator")
-        // Short means only a single line of text
         .setStyle(TextInputStyle.Short)
     )
 

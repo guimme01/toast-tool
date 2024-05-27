@@ -14,6 +14,16 @@
                     "collaboratorId": "collabId"
                 }
             ]
+        },
+        {
+            "userId": "687755696120528985",
+            "collaborators": [
+                {
+                    "name": "Stefano",
+                    "surname": "Mungiello",
+                    "collaboratorId": "0000"
+                }
+            ]
         }
     ]
 }

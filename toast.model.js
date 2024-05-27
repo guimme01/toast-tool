@@ -21,9 +21,9 @@ function saveNewUser(userId) {
 
 /**
  * This function will update a map that contains all the smell values for a collaborator 
- * @param {*} interaction - button that has been clicked
+ * @param {*} interaction - discord.js object to manage the GUI interaction with the user
  * @param {*} index - index of the question that the manager is answering
- * @param {*} gamma - undefined
+ * @param {*} gamma - constant that indicates the value of the answer to a question
  * @param {*} smellValues - hashMap that has a manager as a key and the value will be a new hashMap that will contain all the
  *                          smell value for each question
  */

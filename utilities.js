@@ -1,3 +1,6 @@
+/**
+ * Constant for start command
+ */
 const commands = [
     {
         name: 'start',
@@ -5,8 +8,14 @@ const commands = [
     }
 ];
 
+/**
+ * Questions that the manager has to answer to calculate the level of social debt. For every question, we have:
+ *      Content: the question that will be showed to the manager
+ *      Weight: the weight of the answer to that question for the final result
+ *      Smell: the acronym of the smell
+ */
 const questions = [
-    //Lone Wolf questions
+    /** Lone Wolf questions */
     {
         content: "The contributor has insufficient communication with the team",
         weight: 3.773802,
@@ -18,7 +27,7 @@ const questions = [
         smell: "LW"
     },
 
-    //Prima Donna questions
+    /** Prima Donna questions */
     {
         content: "The contributor has an unwillingness to accept help or support from peers",
         weight: 4.701781,
@@ -29,7 +38,7 @@ const questions = [
         weight: 4.426934,
         smell: "PD"
     },
-    //Black Cloud questions
+    /** Black Cloud questions */
     {
         content: "The contributor hoard critical knowledge and not share it",
         weight: 3.576237,
@@ -42,12 +51,14 @@ const questions = [
     }
 ]
 
+/** Constants for the acronym of the social debt in exam */
 const smellsNames = {
     "LW": "Lone Wolf",
     "PD": "Prima Donna",
     "BC": "Black Cloud"
 }
 
+/** Constants for the possible answers to the question and the associated value to calculate the final result */
 const gamma = {
     "strDis": {value: 0},
     "dis": {value: 0},
