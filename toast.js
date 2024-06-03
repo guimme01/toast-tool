@@ -1,4 +1,6 @@
+// Require the necessary discord.js classes
 const dotenv = require('dotenv')
+const {row, modal} = require("./utilities_menu");
 const {
     Client, GatewayIntentBits, Routes, ButtonInteraction, StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
     ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle
@@ -7,14 +9,14 @@ const {REST} = require('@discordjs/rest');
 const {commands, questions, gamma, smellsNames} = require('./utilities');
 const fs = require('fs');
 const {executeInteractionSelectMenu, executeInteractionButtons, executeChatInteraction, executeModalInteraction} = require("./toast.service");
+let jsonUserData = {};
 
-/**
- * This is the main function. It manages the bot
- */
+
+// the main function that manages the bot
 async function main() {
 
-    /** This section loads the environment variables from the .env file
-     *  and initializes them and other variables used from the bot  */
+    // load the environment variables from the .env file
+    // and initialize the variables needed for the bot
     dotenv.config();
     let interactionInProgress = false;
     global.index = 0;
@@ -38,9 +40,10 @@ async function main() {
             body: commands,
         });
 
-        /**From here, the bot is ready to work */
         client.login(process.env.DISCORD_TOKEN).then(() => {
             console.log('Bot is ready');
+            const data = fs.readFileSync('users.json', 'utf8');
+            jsonUserData = JSON.parse(data);
         });
 
         client.on('interactionCreate', async interaction => {
@@ -50,21 +53,24 @@ async function main() {
             console.log("channelId " + interaction.channelId)
             console.log("userId " + interaction.user.id)
 
-            /**  case command (/start) and bot not already interacting with the user */
+            // if the interaction is a command (/start) and the bot is not already interacting with the user
             if (interaction.isChatInputCommand()) {
-                await executeChatInteraction(interaction)
+                await executeChatInteraction(interaction, jsonUserData)
             }
-            /**  case button interaction */
+            // if the interaction is a button interaction
             else if (interaction.isButton()) {
                 await executeInteractionButtons(smellValues, interaction)
             }
-            /** case select menu interaction */
+            // if the interaction is a select menu interaction
             else if (interaction.isStringSelectMenu()) {
-                await executeInteractionSelectMenu(interaction)
+                await executeInteractionSelectMenu(interaction, jsonUserData)
+                if (interaction.values[0] === 'add') {
+                    await interaction.showModal(modal);
+                }
             }
-            /** case modal interaction (processing the data of the new collaborator) */
+            // else, if the interaction is a modal interaction (and so it is processing the data of the new collaborator)
             else if (interaction.isModalSubmit()) {
-                await executeModalInteraction(interaction)
+                await executeModalInteraction(interaction, jsonUserData)
             }
         });
     } catch (error) {

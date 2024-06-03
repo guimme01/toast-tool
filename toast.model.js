@@ -50,7 +50,6 @@ function updateMap(interaction, index, gamma, smellValues) {
 
 function saveNewCollaborator(userId, name, surname, id) {
     data = getData();
-
     let user = data.users.find((el) => {
         return el.userId === userId
     });
@@ -119,7 +118,7 @@ function getCollaborators(userId){
  */
 function getCollaborator(userId, collabId){
     let collabs = getCollaborators(userId);
-    return collabs.find((el) => el.userId === collabId);
+    return collabs.find((el) => el.collaboratorId === collabId);
 }
 
 /**

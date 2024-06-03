@@ -1,23 +1,23 @@
 const {StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder} = require("discord.js");
 const {questions, gamma, smellsNames} = require("./utilities");
 const {likertScale} = require("./utilities_button");
-const {row, modal} = require("./utilities_menu");
+const {row} = require("./utilities_menu");
 const fs = require("fs");
 const {execSync} = require("child_process");
 const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators, getUser} = require("./toast.model");
 
-/**
- * This function manages all the cases for the smell analysis. All cases are indicated within the function
- * Gestisce le analisi (if, fa iniziare le domande, else, swithc 1 sceglie, switch 2 aggiunge)
- * @param {*} interaction - discord.js object to manage the GUI interaction with the user
- */
+
 async function executeInteractionSelectMenu(interaction){
+    // if the interaction is a select menu interaction (and so it is processing the collaborators list)
+    // get the id of the collaborator selected by the user
     let choice = interaction.values[0];
 
-    /** This branch let the analysis questions start. At the end of this branch, the questions will be showed.  */
+    // if the user selected the collaborator to analyze
     if (choice.includes("analyze")) {
 
+        // get the id of the collaborator selected by the user
         let id = choice.split(" ")[1];
+        // get the collaborator data from the json file
         let collaborator = getCollaborator(interaction.user.id, id);
 
         await interaction.reply({
@@ -27,21 +27,20 @@ async function executeInteractionSelectMenu(interaction){
         const replyMessage = await interaction.fetchReply();
         global.messagesIds.set(interaction.user.id, [replyMessage.id]);
 
-        /** Showing of the question */
+        // start the questions interaction with the collaborator selected
         await nextQuestionButton(interaction, global.index);
     }
-    /** This branch manages (in a switch-case) the first menu. The two operations are: 
-     *      case 'start' -> the choose of the collaborator to analyze
-     *      case 'add' -> add a new collaborator in the users.json file */
+    // else, if the user selected one of the options of the select menu
     else {
         switch (choice) {
+            // the user has selected the option to start the analysis,
+            // so we have to show him the list of his collaborators to choose the one to analyze
             case 'start':
                 await removeMsg(global.choicesIds, interaction);
 
                 let collaborators = getCollaborators(interaction.user.id)
                 if (collaborators.length !== 0) {
                     let select = buildCollabsList(collaborators);
-                    /** Showing of the message and the collaborators list */
                     await interaction.reply({
                         content: "Choose the collaborator you want to analyze",
                         components: [select],
@@ -50,11 +49,12 @@ async function executeInteractionSelectMenu(interaction){
                     global.choicesIds.set(interaction.user.id, [replyMessage.id]);
                 }
                 break;
+            // the user has selected the option to add a new collaborator,
+            // so we have to show him the modal to insert the data of the new collaborator
             case 'add':
                 await removeMsg(global.choicesIds, interaction);
-                /** Showing of the form for adding a new collaborator  */
-                await interaction.showModal(modal);
-
+                // Show the modal to the user
+                return interaction;
                 break;
             default:
                 break;
@@ -62,12 +62,8 @@ async function executeInteractionSelectMenu(interaction){
     }
 }
 
-/**
- * This function shows every question with a 1 second timeout after every answer. At the end, it shows the ending results
- * @param {*} smellValues - 
- * @param {*} interaction - discord.js object to manage the GUI interaction with the user
- */
 async function executeInteractionButtons(smellValues,interaction){
+    // update the smellValues map with the answer of the user
     updateMap(interaction, global.index, gamma, smellValues)
     let content;
 
@@ -80,27 +76,27 @@ async function executeInteractionButtons(smellValues,interaction){
         content: content,
         components: [],
     });
-
+    // add the id of the message to the map of the messages to delete them later
     global.messagesIds.get(interaction.user.id).push(interaction.message.id);
     setTimeout(() => {
         console.log('1 second timeout');
     }, 1000);
 
     global.index = global.index + 1;
-    /** In this branch, if there are other questions to show, they will be showed */
+    // if there are still questions to ask, ask the next one
     if (global.index < questions.length)
         await nextQuestionButton(interaction, global.index);
-    /** In this branch, if the questions are finished, there will be showed the ending results */
+    // else, the interaction is finished and the bot can give the result
     else {
         global.index = 0;
-        console.log('smellValues ->' , smellValues);
+        console.log(smellValues);
 
-
+        // sleep for 1 second to let the user realize that the interaction is finished
         setTimeout(() => {
             console.log('1 second timeout');
         }, 1000);
 
-        /** Deleting of all the messages showed before */
+        // delete all the messages sent by the bot during the interaction
         if (global.messagesIds.get(interaction.user.id) !== undefined) {
             let row = global.messagesIds.get(interaction.user.id);
 
@@ -116,7 +112,7 @@ async function executeInteractionButtons(smellValues,interaction){
             global.messagesIds.delete(interaction.user.id);
         }
 
-        /** Getting the smell values */
+        // get the smell values of the collaborator analyzed
         let values = smellValues.get(interaction.user.id);
         let message = `The following are contributor's values of Community Smells:`;
 
@@ -129,22 +125,17 @@ async function executeInteractionButtons(smellValues,interaction){
 
         }
 
-        /** Showing the final results */
+        // send the result to the user and save the message id to delete it later
         interaction.channel.send(message).then((msg) => {
             global.messagesIds.set(interaction.user.id, [msg.id])
         });
 
-        /** Deleting the smellValues map */
+        // delete the smellValues map entry
         smellValues.delete(interaction.user.id);
 
     }
 }
 
-/**
- * This function shows the main message when the bot starts. After that, if the ID of the user that started the interaction is not
- * saved in the users.json file, it will be saved inside it.
- * @param {*} interaction 
- */
 async function executeChatInteraction(interaction){
     if (interaction.commandName === 'start') {
         await interaction.reply({
@@ -154,7 +145,8 @@ async function executeChatInteraction(interaction){
                 'In the end, i will give you a report on the Community Smells of your collaborator. Let\'s start!',
             components: [row],
         })
-
+        // get the discordId of the user that started the interaction
+        // and save it in the json file if it is not already present
         let user = getUser(interaction.user.id);
         if (user === undefined) {
             saveNewUser(interaction.user.id);
@@ -162,11 +154,6 @@ async function executeChatInteraction(interaction){
     }
 }
 
-/**
- * This function get the data from the form for the adding of a new collaborator and 
- * uses the saveNewCollaborator function to save them.
- * @param {*} interaction - discord.js object to manage the GUI interaction with the user
- */
 async function executeModalInteraction(interaction){
     console.log(interaction.fields.fields);
     await interaction.reply({
@@ -182,12 +169,6 @@ async function executeModalInteraction(interaction){
 
     saveNewCollaborator(interaction.user.id, name, surname, id);
 }
-
-/**
- * This function deletes a list of messages showed to the user before.
- * @param {*} list - list of messages to delete
- * @param {*} interaction - discord.js object to manage the GUI interaction with the user
- */
 async function removeMsg(list, interaction) {
     let row = list.get(interaction.user.id);
 
@@ -204,11 +185,6 @@ async function removeMsg(list, interaction) {
     }
 }
 
-/**
- * This function build the collaborators list to show when a manager has to choose a collaborator to analyze.
- * @param {*} collaborators - collaborators from the users.json file
- * @returns the list of collaborators
- */
 function buildCollabsList(collaborators) {
     let select = new StringSelectMenuBuilder()
         .setCustomId('collab_picker')
@@ -225,11 +201,6 @@ function buildCollabsList(collaborators) {
         .addComponents(select);
 }
 
-/**
- * This function generates the buttons for the answers to a question
- * @param {*} interaction - discord.js object to manage the GUI interaction with the user
- * @param {*} index - index of the question in the set of questions
- */
 async function nextQuestionButton(interaction, index) {
     await interaction.followUp({
         content: questions[index].content,

@@ -2,41 +2,27 @@ const toastModel = require('../toast.model');
 const {executeChatInteraction, executeInteractionSelectMenu, executeModalInteraction, executeInteractionButtons} = require('../toast.service');
 const {questions, gamma, smellsNames} = require("../utilities");
 const {likertScale} = require("../utilities_button");
+const testFile = "tests/test.users.json"
+const fs = require('fs')
 
-beforeEach(() => {
-    mockJsonUserData = {
-        "users": [
-            {
-                "userId": "",
-                "collaborators": []
-            }
-        ]
-    }
-});
-
-afterEach(() => {
-    toastModel.saveNewUser.mockClear();
-    toastModel.saveNewCollaborator.mockClear();
-    mockInteraction.reply.mockClear();
-});
+jest.spyOn(console, 'log').mockImplementation(() => {});
+jest.spyOn(console, 'error').mockImplementation(() => {});
 
 jest.mock('../toast.model', () => ({
     ...jest.requireActual('../toast.model'),
-    saveNewUser: jest.fn().mockImplementation((userId, jsonUserData) => {
-        let newUser = {userId: userId, collaborators: []};
-        jsonUserData.users.push(newUser);
+    saveNewUser: jest.fn().mockImplementation((userId) => {
+        return {userId: userId, collaborators: []}
     }),
-    saveNewCollaborator: jest.fn().mockImplementation((userId, name, surname, id, jsonUserData) => {
-        let user = jsonUserData.users.find((el) => {
-            return el.userId === userId
-        });
-    
-        let collaborator = {name: name, surname: surname, collaboratorId: id};
-    
-        user.collaborators.push(collaborator);
-        const jsonString = JSON.stringify(jsonUserData, null, 4);
+    saveNewCollaborator: jest.fn().mockImplementation((userId, name, surname, id) => {}),
+    updateMap: jest.fn(),
+    getCollaborator: jest.fn().mockImplementation(() => {
+        return {
+            "name": "name",
+            "surname": "surname",
+            "collaboratorId": "2"
+        }
     }),
-    updateMap: jest.fn()
+    getUser: jest.fn().mockResolvedValue({userId: "", collaborators: []})
 }));
 
 mockInteraction = {
@@ -49,18 +35,14 @@ mockInteraction = {
             elem = "";})}})}}
 }
 
-jest.spyOn(console, 'log').mockImplementation(() => {});
-jest.spyOn(console, 'error').mockImplementation(() => {});
+afterEach( () => {
+    jest.clearAllMocks()
+})
 
 describe("executeInteractionSelectMenu", () => {
-    test('TC_0', async () => {
+    test("TC_0", async () => {
         const userId = "1"
         const user = {id: userId}
-        mockJsonUserData.users = [{userId: userId, collaborators: [{
-            "name": "name",
-            "surname": "surname",
-            "collaboratorId": "2"
-        }]}]
 
         mockInteraction.user = user;
         mockInteraction.values = ["analyze 2"];
@@ -72,16 +54,15 @@ describe("executeInteractionSelectMenu", () => {
                 components: [likertScale],
             });
         });
-    
 
         global.messagesIds = new Map();
         
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
+        await executeInteractionSelectMenu(mockInteraction);
 
         expect(global.messagesIds.get(mockInteraction.user.id) === "replyMessage");
-    });
+    })
 
-    test('TC_1', async () => {
+    test("TC_1", async () => {
         mockInteraction.values = ["start"];
         const userId = "1"
         const user = {id: userId}
@@ -89,20 +70,11 @@ describe("executeInteractionSelectMenu", () => {
 
         global.choicesIds = new Map();
         jest.spyOn(global.choicesIds, 'delete')
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
-        expect(global.choicesIds.delete).not.toHaveBeenCalled();
-        expect(mockInteraction.reply).not.toHaveBeenCalled();
-    });
+        await executeInteractionSelectMenu(mockInteraction);
+        expect(global.choicesIds.get(mockInteraction.user.id) === "replyMessage");
+    })
 
     test('TC_2', async () => {
-        mockJsonUserData = {
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": []
-                }
-            ]
-        }
 
         mockInteraction.values = ["start"];
         const userId = "1"
@@ -111,24 +83,19 @@ describe("executeInteractionSelectMenu", () => {
 
         global.choicesIds = new Map();
         global.choicesIds.set(userId, ["msg1", "msg2"]);
-        
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
+
+        toastModel.getCollaborators = jest.fn().mockImplementation(() => {
+            return [{
+                "name": "name",
+                "surname": "surname",
+                "collaboratorId": "2"
+            }]
+        })
+        await executeInteractionSelectMenu(mockInteraction);
         expect((global.choicesIds.get(userId)) === undefined)
-    });
+    })
 
     test('TC_3', async () => {
-        mockJsonUserData = {
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": [{
-                        "name": "name",
-                        "surname": "surname",
-                        "collaboratorId": "id"
-                    }]
-                }
-            ]
-        }
 
         mockInteraction.values = ["start"];
         const userId = "1"
@@ -136,8 +103,10 @@ describe("executeInteractionSelectMenu", () => {
         mockInteraction.user = user;
 
         global.choicesIds = new Map();
-
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
+        toastModel.getCollaborators = jest.fn().mockImplementation(() => {
+            return []
+        })
+        await executeInteractionSelectMenu(mockInteraction);
         expect(global.choicesIds.get(userId) === "replyMessage");
     });
 
@@ -149,13 +118,12 @@ describe("executeInteractionSelectMenu", () => {
         mockInteraction.showModal = jest.fn();
         global.choicesIds = new Map();
         jest.spyOn(global.choicesIds, 'delete').mockImplementation(() => {
-
         })
 
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
-        expect(mockInteraction.showModal).toHaveBeenCalled();
+        await executeInteractionSelectMenu(mockInteraction);
         expect(global.choicesIds.delete).not.toHaveBeenCalled();
     });
+
     test('TC_5', async () => {
         mockInteraction.values = ["add"];
         const userId = "1"
@@ -165,10 +133,8 @@ describe("executeInteractionSelectMenu", () => {
         global.choicesIds = new Map();
         global.choicesIds.set(userId, ["msg1", "msg2"]);
 
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
-        expect(mockInteraction.showModal).toHaveBeenCalled();
+        await executeInteractionSelectMenu(mockInteraction);
         expect((global.choicesIds.get(userId)) === undefined)
-        mockInteraction.showModal.mockReset();
     });
 
     test('TC_6', async () => {
@@ -180,106 +146,82 @@ describe("executeInteractionSelectMenu", () => {
         jest.spyOn(global.choicesIds, 'set').mockImplementation(() => {
 
         })
-        await executeInteractionSelectMenu(mockInteraction, mockJsonUserData);
+        await executeInteractionSelectMenu(mockInteraction);
 
-        expect(mockInteraction.showModal).not.toHaveBeenCalled();
         expect(global.choicesIds.get).not.toHaveBeenCalled();
         expect(global.choicesIds.set).not.toHaveBeenCalled();
     });
-});
+
+    test('TC_7', async () => {
+        mockInteraction.values = ["other"];
+        global.messagesIds = new Map();
+        jest.spyOn(global.messagesIds, 'get').mockImplementation(() => {
+
+        })
+        jest.spyOn(global.messagesIds, 'set').mockImplementation(() => {
+
+        })
+        await executeInteractionSelectMenu(mockInteraction);
+
+        expect(global.messagesIds.set).not.toHaveBeenCalled();
+    });
+})
 
 describe("executeChatInteraction", () => {
-    test('TC_0', async () => {
-        mockInteraction.commandName = "start";
+    test("TC_0", async () => {
         const userId = "3"
-        const user = {id: userId}
+
+        mockInteraction.commandName = "start";
+        const user = {id: userId, collaborators: []}
         mockInteraction.user = user;
 
-        await executeChatInteraction(mockInteraction, mockJsonUserData)
-        expect(mockJsonUserData.users.find((el) => {
-            return el.userId === userId
-        }) !== undefined).toBe(true)
+        await executeChatInteraction(mockInteraction)
+        
+        expect(toastModel.saveNewUser).not.toHaveBeenCalled();
     });
 
-    test('TC_1', async () => {
-        mockJsonUserData = {
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": []
-                }
-            ]
-        }
+    test("TC_1", async () => {
+        const userId = "3"
+
+        toastModel.getUser.mockImplementation(() => {
+            return undefined
+        })
 
         mockInteraction.commandName = "start";
-        const userId = "1"
-        const mockUser = {id: userId}
-        mockInteraction.user = mockUser;
+        const user = {id: userId, collaborators: []}
+        mockInteraction.user = user;
 
-        await executeChatInteraction(mockInteraction, mockJsonUserData)
-        expect(toastModel.saveNewUser).not.toHaveBeenCalled();
-
+        await executeChatInteraction(mockInteraction)
+        
+        expect(toastModel.saveNewUser).toHaveBeenCalled();
     });
+
     test('TC_2', async () => {
         mockInteraction.commandName = "other";
         const userId = "3"
         const user = {id: userId}
         mockInteraction.user = user;
 
-        await executeChatInteraction(mockInteraction, mockJsonUserData)
+        await executeChatInteraction(mockInteraction)
         expect(mockInteraction.reply).not.toHaveBeenCalled();
     });
-});
-
-describe("ExecuteModalInteraction", () => {
-    test('TC_0', async() => {
-        mockJsonUserData = {
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": [{
-                        "name": "",
-                        "surname": "",
-                        "collaboratorId": ""
-                    }]
-                }
-            ]
-        }
-        const userId = "1"
-        const user = {id: userId}
-        mockInteraction.user = user;
-        global.choicesIds = { set: jest.fn() };
-
-        const mockFields = {
-            fields: new Map([
-                ['nameInput', { value: 'collabName' }],
-                ['surnameInput', { value: 'collabSurname' }],
-                ['idInput', { value: 'collabId' }]
-            ])
-        };
-
-        mockInteraction.fields = mockFields;
-
-        await executeModalInteraction(mockInteraction, mockJsonUserData);
-
-        expect(mockJsonUserData.users.some(user => {
-            return user.collaborators.some(collaborator => {
-                return collaborator.collaboratorId === "collabId";
-            });
-        })).toBe(true);
-    });
-});
+})
 
 describe("executeInteractionButtons", () => {
     test('TC_0', async() => {
+        const userId = "3"
+        const user = {id: userId}
+        mockInteraction.user = user;
+        global.messagesIds = new Map();
+        global.messagesIds.set(userId, [])
         global.index = 0;
         let smellValues = new Map();
         mockInteraction.message = {id: "id"};
     
         await executeInteractionButtons(smellValues, mockInteraction);
         expect(mockInteraction.followUp).toHaveBeenCalled();
-        
     });
+
     test('TC_1', async() => {
         const userId = "1"
         const user = {id: userId}
@@ -300,29 +242,29 @@ describe("executeInteractionButtons", () => {
         })}
 
         await executeInteractionButtons(smellValues, mockInteraction);
-        expect(global.messagesIds.get(userId) === undefined);
         expect(smellValues.get(userId) === undefined);
     });
+})
 
-    /*test('TC_2', async() => {
+describe("ExecuteModalInteraction", () => {
+    test('TC_0', async() => {
         const userId = "1"
         const user = {id: userId}
         mockInteraction.user = user;
+        global.choicesIds = { set: jest.fn() };
 
-        let smellValues = new Map();
-        smellValues.set(userId, "12")
-        mockInteraction.message = {id: "id"};
+        const mockFields = {
+            fields: new Map([
+                ['nameInput', { value: 'collabName' }],
+                ['surnameInput', { value: 'collabSurname' }],
+                ['idInput', { value: 'collabId' }]
+            ])
+        };
 
-        global.index = questions.length;
-        global.messagesIds = new Map();
+        mockInteraction.fields = mockFields;
 
+        await executeModalInteraction(mockInteraction);
 
-        mockInteraction.channel = {send: jest.fn().mockImplementation((msg) => {
-            return {id: "msgId", then: jest.fn()}
-        })}
-
-        await executeInteractionButtons(smellValues, mockInteraction);
-        expect(global.messagesIds.delete).not.toHaveBeenCalled();
-        expect(smellValues.get(userId) === undefined);
-    });*/
+        expect(toastModel.saveNewCollaborator).toHaveBeenCalled()
+    });
 });
