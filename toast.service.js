@@ -4,7 +4,8 @@ const {likertScale} = require("./utilities_button");
 const {row} = require("./utilities_menu");
 const fs = require("fs");
 const {execSync} = require("child_process");
-const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators, getUser} = require("./toast.model");
+const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators, getUser,
+    executeQuery, getConnection} = require("./toast.model");
 
 
 async function executeInteractionSelectMenu(interaction){
@@ -37,6 +38,7 @@ async function executeInteractionSelectMenu(interaction){
             // so we have to show him the list of his collaborators to choose the one to analyze
             case 'start':
                 await removeMsg(global.choicesIds, interaction);
+                executeQuery();
 
                 let collaborators = getCollaborators(interaction.user.id)
                 if (collaborators.length !== 0) {
@@ -147,28 +149,32 @@ async function executeChatInteraction(interaction){
         })
         // get the discordId of the user that started the interaction
         // and save it in the json file if it is not already present
-        let user = getUser(interaction.user.id);
-        if (user === undefined) {
-            saveNewUser(interaction.user.id);
-        }
+        saveNewUser(interaction.user.id, interaction.user.username);
     }
 }
 
 async function executeModalInteraction(interaction){
     console.log(interaction.fields.fields);
-    await interaction.reply({
-        content: 'Data saved',
-        components: [],
-    })
-    const replyMessage = await interaction.fetchReply();
-    global.choicesIds.set(interaction.user.id, [replyMessage.id]);
-
     let name = interaction.fields.fields.get('nameInput').value;
     let surname = interaction.fields.fields.get('surnameInput').value;
     let id = interaction.fields.fields.get('idInput').value;
 
-    saveNewCollaborator(interaction.user.id, name, surname, id);
+
+    let result = await saveNewCollaborator(interaction.user.id, name, surname, id);
+    console.log('result:', result)
+    if(result)
+        await interaction.reply({
+            content: 'Data saved',
+            components: [],
+        })
+    else
+        await interaction.reply({
+            content: 'Data not saved: collaborator with same id exists',
+            components: [],
+        })
 }
+
+
 async function removeMsg(list, interaction) {
     let row = list.get(interaction.user.id);
 
