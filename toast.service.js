@@ -40,7 +40,7 @@ async function executeInteractionSelectMenu(interaction){
                 await removeMsg(global.choicesIds, interaction);
                 executeQuery();
 
-                let collaborators = getCollaborators(interaction.user.id)
+                let collaborators = await getCollaborators(interaction.user.id)
                 if (collaborators.length !== 0) {
                     let select = buildCollabsList(collaborators);
                     await interaction.reply({

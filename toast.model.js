@@ -36,7 +36,7 @@ async function connectToDatabase() {
 
 /**
  * 
- * This function saves a new user (with a manager role) into azure database
+ * This function saves a new user (with a manager role) into cloud database
  * @param {*} userId - The user's ID obtained from the Discord information.
  * @param {*} username - The user's username obtained from the Discord information.
  * @returns the user that has been added
@@ -82,48 +82,43 @@ function updateMap(interaction, index, gamma, smellValues) {
     userSmell.set(questions[index].smell, value);
 }
 
-//TODO
+
 /**
- * This function saves a new user (with a collaborator role) into the file users.json
+ * This function saves a new user (with a collaborator role) into the cloud database
  * @param {*} userId - the collaborator's manager id
  * @param {*} name - the collaborator's name
  * @param {*} surname - the collaborator's surname
  * @param {*} id - the collaborator's id
  */
 async function saveNewCollaborator(managerId, name, surname, collaboratorId) {
-    /*data = getData();
-    let user = data.users.find((el) => {
-        return el.userId === userId
-    });
-
-    let collaborator = {name: name, surname: surname, collaboratorId: id};
-
-    user.collaborators.push(collaborator);
-    const jsonString = JSON.stringify(data, null, 4);
-
-    writeData(jsonString);*/
-
     try {
         var poolConnection = await connectToDatabase();
 
         var resultSet = await poolConnection.request()
             .input('managerId', sql.NVarChar(20), managerId)
             .query(`SELECT collaboratorId FROM collaborator WHERE managerId = @managerId`);
+        
         var flag = false;
-        for (let index = 0; index < resultSet.recordset.length; index++)
-            if(collaboratorId === resultSet.recordset[index].collaboratorId)
+        for (let index = 0; index < resultSet.recordset.length; index++) {
+            if (collaboratorId === resultSet.recordset[index].collaboratorId) {
                 flag = true;
+                break;
+            }
+        }
             
-        if(!flag)
+        if(!flag){
             await poolConnection.request()
-            .input('collaboratorId', sql.NVarChar(20), collaboratorId)
-            .input('name', sql.NVarChar(20), name)
-            .input('surname', sql.NVarChar(20), surname)
-            .input('managerId', sql.NVarChar(20), managerId)
-            .query('INSERT INTO collaborator (collaboratorId, name, surname, managerId) VALUES (@collaboratorId, @name, @surname, @managerId)');
+                .input('collaboratorId', sql.NVarChar(20), collaboratorId)
+                .input('name', sql.NVarChar(20), name)
+                .input('surname', sql.NVarChar(20), surname)
+                .input('managerId', sql.NVarChar(20), managerId)
+                .query('INSERT INTO collaborator (collaboratorId, name, surname, managerId) VALUES (@collaboratorId, @name, @surname, @managerId)');
+            poolConnection.close();    
+            return true;
+        }
         else
             return false;
-        poolConnection.close();
+        
 
     } catch (err) {console.error("Error:", err.message);}
 
@@ -159,37 +154,52 @@ function writeData(jsonString){
     });
 }
 
-//TODO
+
 /**
- * This function will get from the users.json file the list of collaborators of a manager. 
- * If the user is not found, it will be written inside it.
- * @param {*} userId - the manager's id
+ * This function will get from the cloud database the list of collaborators of a manager. 
+ * @param {*} managerId - the manager's id
  * @returns the list of the collaborators if found or an empty list if not found
  */
-function getCollaborators(userId){
-    let data = getData();
+async function getCollaborators(managerId){
+        
+        try {
+            var poolConnection = await sql.connect(configuration);
 
-    let user = data.users.find((el) => {
-        return el.userId === userId
-    });
-
-    if (user === undefined) {
-        saveNewUser(userId);
-        return [];
-    } else
-        return user.collaborators;
+            var resultSet = await poolConnection.request()
+                .input('managerId', sql.NVarChar(20), managerId)
+                .query(`SELECT c.collaboratorId, c.name, c.surname FROM 
+                        manager m JOIN collaborator c ON m.managerId = c.managerId
+                        WHERE m.managerId = @managerId`)
+            poolConnection.close();
+    
+            return resultSet.recordset
+        } catch (err) {
+            console.error(err.message);
+        }
+    
 }
 
-//TODO
 /**
  * This function will find and get a specific collaborator in the list of a manager's collaborators
  * @param {*} userId - the manager's id
  * @param {*} collabId - the collaborator's id
  * @returns the collaborator's data or undefined if not found.
  */
-function getCollaborator(userId, collabId){
-    let collabs = getCollaborators(userId);
-    return collabs.find((el) => el.collaboratorId === collabId);
+async function getCollaborator(managerId, collaboratorId){
+    try {
+        var poolConnection = await sql.connect(configuration);
+
+        var resultSet = await poolConnection.request()
+            .input('managerId', sql.NVarChar(20), managerId)
+            .input('collaboratorId', sql.NVarChar(20), collaboratorId)
+            .query(`SELECT c.collaboratorId, c.name, c.surname FROM 
+                    manager m JOIN collaborator c ON m.managerId = c.managerId
+                    WHERE m.managerId = @managerId AND c.collaboratorId = @collaboratorId`)
+            poolConnection.close();
+        return resultSet.recordset[0]
+    } catch (err) {
+        console.error(err.message);
+    }
 }
 
 //TODO
@@ -205,89 +215,6 @@ function getUser(userId){
         return el.userId === userId
     });
 }
-
-    async function connectAndQuery() {
-        try {
-            var poolConnection = await sql.connect(configuration);
-    
-            console.log("Reading rows from the Table...");
-            var resultSet = await poolConnection.request().query(`SELECT * FROM manager`);
-    
-            console.log(`${resultSet.recordset.length} rows returned.`);
-    
-            // output column headers
-            var columns = "";
-            for (var column in resultSet.recordset.columns) {
-                columns += column + ", ";
-            }
-            console.log("%s\t", columns.substring(0, columns.length - 2));
-    
-            // ouput row contents from default record set
-            resultSet.recordset.forEach(row => {
-                console.log("%s\t%s", row.managerId, row.username);
-            });
-    
-            // close connection only when we're certain application is finished
-            poolConnection.close();
-        } catch (err) {
-            console.error(err.message);
-        }
-    }
-
-    async function executeQuery() {
-        try {
-            // Connessione al database
-            var poolConnection = await sql.connect(configuration);
-            console.log("Connected to the database.");
-    
-            // Esecuzione della query
-            console.log("Reading rows from the Table...");
-            var resultSet = await poolConnection.request().query(`SELECT * FROM manager`);
-    
-            console.log(`${resultSet.recordset.length} rows returned.`);
-    
-            // Output column headers
-            var columns = "";
-            for (var column in resultSet.recordset.columns) {
-                columns += column + ", ";
-            }
-            console.log("%s\t", columns.substring(0, columns.length - 2));
-    
-            // Output row contents from default record set
-            resultSet.recordset.forEach(row => {
-                console.log("%s\t%s", row.managerId, row.username);
-            });
-    
-            // Chiusura della connessione
-            poolConnection.close();
-    
-        } catch (err) {
-            console.error("Error:", err.message);
-        }
-    }
-
-
-    async function executeInsert(data) {
-        try {
-            // Connessione al database
-            var poolConnection = await sql.connect(configuration);
-            console.log("Connected to the database.");
-    
-            // Esecuzione dell'inserimento
-            await poolConnection.request()
-                .input('managerId', sql.Int, data.managerId)
-                .input('username', sql.NVarChar(50), data.username)
-                .query('INSERT INTO manager (managerId, username) VALUES (@managerId, @username)');
-            
-            console.log("Insert successful.");
-    
-            // Chiusura della connessione
-            poolConnection.close();
-    
-        } catch (err) {
-            console.error("Error:", err.message);
-        }
-    }
     
 
 module.exports.saveNewUser = saveNewUser;
