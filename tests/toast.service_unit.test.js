@@ -62,18 +62,6 @@ describe("executeInteractionSelectMenu", () => {
         expect(global.messagesIds.get(mockInteraction.user.id) === "replyMessage");
     })
 
-    test("TC_1", async () => {
-        mockInteraction.values = ["start"];
-        const userId = "1"
-        const user = {id: userId}
-        mockInteraction.user = user;
-
-        global.choicesIds = new Map();
-        jest.spyOn(global.choicesIds, 'delete')
-        await executeInteractionSelectMenu(mockInteraction);
-        expect(global.choicesIds.get(mockInteraction.user.id) === "replyMessage");
-    })
-
     test('TC_2', async () => {
 
         mockInteraction.values = ["start"];

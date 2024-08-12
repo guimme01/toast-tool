@@ -1,332 +1,128 @@
-const fs = require('fs');
-const toastModel = require('../toast.model');
-const { questions, gamma } = require('../utilities');
-const testFile = "tests/test.users.json";
+const sql = require('mssql');
+const { saveNewUser, saveNewCollaborator, getCollaborators, getCollaborator, getUser } = require('../toast.model');
 
-const originalReadFile = fs.readFileSync;
+jest.mock('mssql');
 
-function getFileContent() {
-    try {
-        return originalReadFile(testFile, 'utf8');
-    } catch (err) {
-        throw err;
-    }
-}
-
-afterEach(() => {
-    fs.writeFileSync(testFile, "", 'utf-8');
-});
-
-jest.spyOn(fs, 'writeFile');
-jest.spyOn(fs, 'readFileSync');
-jest.spyOn(console, 'log').mockImplementation(() => {});
-jest.spyOn(console, 'error').mockImplementation(() => {});
-
-describe("SaveNewUser", () => {
-
-    test('TC_0', (done) => {
-
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": []
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            fs.writeFileSync(testFile, data, encoding);
-            callback(null);
-        });
-
-        const userId = "2";
-        const expectedUser = { userId: userId, collaborators: [] };
-
-        toastModel.saveNewUser(userId);
-
-        try {
-            const data = getFileContent();
-            let obj = JSON.parse(data);
-            expect(obj.users.find((el) => el.userId === userId)).toEqual(expectedUser);
-            done();
-        } catch (err) {
-            console.error(err);
-            done(err);
-        }
+describe('Database Functions', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
-    test('TC_1', (done) => {
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "1",
-                    "collaborators": []
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            try {
-                fs.writeFileSync("", data, encoding);
-                callback(null);
-            } catch (error) {
-                callback(error);
-            }
-        });
-
-        const userId = "2";
-
-        toastModel.saveNewUser(userId);
-
-        try {
-            const data = getFileContent();
-            expect(data === "").toBe(true)
-            done();
-        } catch (err) {
-            console.error(err);
-            done(err);
-        }
-    });
-});
-
-describe("SaveNewCollaborator", () => {
-    test('TC_0', (done) => {
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "2",
-                    "collaborators": []
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-        const userId = '2';
-        const name = 'name';
-        const surname = 'surname';
-        const id = 'id';
-
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            fs.writeFileSync(testFile, data, encoding);
-            callback(null);
-        });
-
-        toastModel.saveNewCollaborator(userId, name, surname, id)
-
-        try {
-            const data = getFileContent();
-            let obj = JSON.parse(data);
-            expect(obj.users.some(user => {
-                return user.collaborators.some(collaborator => {
-                    return collaborator.collaboratorId === id;
-                });
-            })).toBe(true);
-            done();
-        } catch (err) {
-            console.error(err);
-            done(err);
-        }
-    });
-
-    test('TC_1', (done) => {
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "2",
-                    "collaborators": []
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-        
-        const userId = '2';
-        const name = 'name';
-        const surname = 'surname';
-        const id = 'id';
-
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            try {
-                fs.writeFileSync("", data, encoding);
-            } catch (error) {
-                callback(error)
-            }
-        });
-
-        toastModel.saveNewCollaborator(userId, name, surname, id)
-
-        try {
-            const data = getFileContent();
-            expect(data === "").toBe(true)
-            done();
-        } catch (err) {
-            console.error(err);
-            done(err);
-        }
-    });
-});
-
-describe("UpdateMap", () => {
-    test('TC_0', () => {
-        const interaction = {
-            user: {
-                id: '1'
-            },
-            customId: 'agree' 
+    test('saveNewUser should connect to the database and insert a new manager', async () => {
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            input: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({}),
+            close: jest.fn(),
         };
-        const index = 0;
-        const smellValues = new Map();
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
 
-        toastModel.updateMap(interaction, index, gamma, smellValues);
+        await saveNewUser('123', 'testuser');
 
-        console.log(smellValues);
-
-        const userSmell = smellValues.get(interaction.user.id);
-        const expectedValue = gamma[interaction.customId].value * questions[index].weight;
-
-        console.log(userSmell);
-        console.log(questions[index].smell);
-        console.log(userSmell.get(questions[index].smell));
-
-        expect(userSmell).toBeDefined();
-        expect(userSmell.get(questions[index].smell)).toBe(expectedValue);
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+        expect(mockPoolConnection.input).toHaveBeenCalled();
+        expect(mockPoolConnection.query).toHaveBeenCalled();
+        expect(mockPoolConnection.close).toHaveBeenCalled();
     });
 
-    test('TC_1', () => {
-        const interaction = {
-            user: {
-                id: '1'
-            },
-            customId: 'agree'
+    test('saveNewCollaborator should insert a new collaborator if not already exists', async () => {
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            input: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: [] }).mockResolvedValueOnce({}),
+            close: jest.fn(),
         };
-        const index = 0;
-        const smellValues = new Map();
-        smellValues.set(interaction.user.id, new Map())
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
 
-        toastModel.updateMap(interaction, index, gamma, smellValues);
+        const result = await saveNewCollaborator('456', 'John', 'Doe');
 
-        console.log(smellValues);
-
-        const userSmell = smellValues.get(interaction.user.id);
-        const expectedValue = gamma[interaction.customId].value * questions[index].weight;
-
-        console.log(userSmell);
-        console.log(questions[index].smell);
-        console.log(userSmell.get(questions[index].smell));
-
-        expect(userSmell).toBeDefined();
-        expect(userSmell.get(questions[index].smell)).toBe(expectedValue);
-    });
-});
-
-describe("GetCollaborator", () => {
-
-    test("TC_0", (done) => {
-
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "2",
-                    "collaborators": [{
-                        "name": "collabName",
-                        "surname": "collabSurname",
-                        "collaboratorId": "collabId"
-                    }]
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            fs.writeFileSync(testFile, data, encoding);
-            callback(null);
-        });
-
-        userId = "2"
-        collabId = "collabId"
-
-        let expectedCollaborator = toastModel.getCollaborator(userId, collabId)
-
-        expect(collabId === expectedCollaborator.collaboratorId);
-        done();
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+        expect(mockPoolConnection.input).toHaveBeenCalled();
+        expect(mockPoolConnection.query).toHaveBeenCalled();
+        expect(mockPoolConnection.close).toHaveBeenCalled();
     });
 
-    test("TC_1", (done) => {
-        userId = "1"
-        collabId = "collabId"
+    test('saveNewCollaborator should not insert if collaborator already exists', async () => {
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            input: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: [{ collaboratorId: '456' }] }),
+            close: jest.fn(),
+        };
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
 
-        process.nextTick(() => {
-            let expectedCollaborator = toastModel.getCollaborator(userId, collabId)
+        const result = await saveNewCollaborator('456', 'John', 'Doe');
 
-            try {
-                expect(expectedCollaborator === undefined)
-                done();
-            } catch (err) {
-                console.error(err);
-                done(err);
-            }
-        })
-    });
-});
-
-describe("GetCollaborator", () => {
-
-    test("TC_0", (done) => {
-
-        let mockData = JSON.stringify({
-            "users": [
-                {
-                    "userId": "2",
-                    "collaborators": []
-                }
-            ]
-        }, null, 4);
-    
-        fs.readFileSync.mockImplementation((file, encoding) => {
-            return mockData;
-        });
-
-        fs.writeFile.mockImplementation((file, data, encoding, callback) => {
-            fs.writeFileSync(testFile, data, encoding);
-            callback(null);
-        });
-
-        userId = "2"
-
-        let expectedUser = toastModel.getUser(userId)
-
-        expect(userId === expectedUser.userId);
-        done();
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+        expect(mockPoolConnection.query).toHaveBeenCalled();
+        expect(mockPoolConnection.close).toHaveBeenCalled();
     });
 
-    test("TC_1", (done) => {
-        userId = "12"
+    test('getCollaborators should return a list of collaborators', async () => {
+        const mockData = [
+            { collaboratorId: '789', name: 'John', surname: 'Doe' },
+            { collaboratorId: '456', name: 'Jane', surname: 'Doe' },
+        ];
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: mockData }),
+            close: jest.fn(),
+        };
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
 
-        process.nextTick(() => {
-            let expectedUser = toastModel.getCollaborator(userId, collabId)
+        const result = await getCollaborators();
 
-            try {
-                expect(expectedUser === undefined)
-                done();
-            } catch (err) {
-                console.error(err);
-                done(err);
-            }
-        })
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+    });
+
+    test('getCollaborator should return a specific collaborator', async () => {
+        const mockData = { collaboratorId: '789', name: 'John', surname: 'Doe' };
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: [mockData] }),
+            close: jest.fn(),
+        };
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
+
+        const result = await getCollaborator('789');
+
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+    });
+
+    test('getUser should return the user if found', async () => {
+        const mockData = [{ managerId: '123' }];
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: mockData }),
+            close: jest.fn(),
+        };
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
+
+        const result = await getUser('123');
+
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+        expect(mockPoolConnection.query).toHaveBeenCalled();
+    });
+
+    test('getUser should return undefined if user not found', async () => {
+        const mockPoolConnection = {
+            request: jest.fn().mockReturnThis(),
+            query: jest.fn().mockResolvedValueOnce({ recordset: [] }),
+            close: jest.fn(),
+        };
+        sql.connect.mockResolvedValueOnce(mockPoolConnection);
+
+        const result = await getUser('999');
+
+        expect(sql.connect).toHaveBeenCalled();
+        expect(mockPoolConnection.request).toHaveBeenCalled();
+        expect(mockPoolConnection.query).toHaveBeenCalled();
+        expect(result).toBeUndefined();
     });
 });

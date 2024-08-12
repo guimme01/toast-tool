@@ -1,6 +1,6 @@
 {
     "sqlserver": {
-      "host": "toast-server.database.windows.net",
+      "host": "toast-tool-server.database.windows.net",
       "user": "toastadmin",
       "password": "Toasttool0",
       "database": "toastdb",

@@ -4,9 +4,9 @@ const {likertScale} = require("./utilities_button");
 const {row} = require("./utilities_menu");
 const fs = require("fs");
 const {execSync} = require("child_process");
-const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators, getUser,
-    executeQuery, getConnection} = require("./toast.model");
+const {saveNewUser, saveNewCollaborator, updateMap, getCollaborator, getCollaborators, getUser} = require("./toast.model");
 
+let collaboratorId;
 
 async function executeInteractionSelectMenu(interaction){
     // if the interaction is a select menu interaction (and so it is processing the collaborators list)
@@ -19,8 +19,8 @@ async function executeInteractionSelectMenu(interaction){
         // get the id of the collaborator selected by the user
         let id = choice.split(" ")[1];
         // get the collaborator data from the json file
-        let collaborator = getCollaborator(interaction.user.id, id);
-
+        let collaborator = await getCollaborator(interaction.user.id, id);
+        collaboratorId = collaborator;
         await interaction.reply({
             content: `Beginning analysis of ${collaborator.name} ${collaborator.surname}`,
             components: [],
@@ -38,7 +38,6 @@ async function executeInteractionSelectMenu(interaction){
             // so we have to show him the list of his collaborators to choose the one to analyze
             case 'start':
                 await removeMsg(global.choicesIds, interaction);
-                executeQuery();
 
                 let collaborators = await getCollaborators(interaction.user.id)
                 if (collaborators.length !== 0) {
@@ -57,7 +56,6 @@ async function executeInteractionSelectMenu(interaction){
                 await removeMsg(global.choicesIds, interaction);
                 // Show the modal to the user
                 return interaction;
-                break;
             default:
                 break;
         }
@@ -65,8 +63,9 @@ async function executeInteractionSelectMenu(interaction){
 }
 
 async function executeInteractionButtons(smellValues,interaction){
+    
     // update the smellValues map with the answer of the user
-    updateMap(interaction, global.index, gamma, smellValues)
+    updateMap(interaction, global.index, gamma, smellValues, collaboratorId.collaboratorId)
     let content;
 
     if (global.index + 1 < questions.length)
@@ -149,7 +148,10 @@ async function executeChatInteraction(interaction){
         })
         // get the discordId of the user that started the interaction
         // and save it in the json file if it is not already present
-        saveNewUser(interaction.user.id, interaction.user.username);
+        let user = await getUser(interaction.user.id);
+        if (user === undefined) {
+            saveNewUser(interaction.user.id, interaction.user.username);
+        }
     }
 }
 
