@@ -1,9 +1,0 @@
-{
-    "sqlserver": {
-      "host": "toast-tool-server.database.windows.net",
-      "user": "toastadmin",
-      "password": "Toasttool0",
-      "database": "toastdb",
-      "port": 1433
-    }
-}

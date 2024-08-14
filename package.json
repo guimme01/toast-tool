@@ -19,10 +19,12 @@
   "homepage": "https://github.com/atdepo/bit-tesi#readme",
   "dependencies": {
     "@discordjs/rest": "^2.0.0",
+    "axios": "^1.7.3",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
     "mssql": "^10.0.2",
-    "mysql2": "^3.10.0",
+    "mysql2": "^3.11.0",
+    "node-fetch": "^3.3.2",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

@@ -13,13 +13,19 @@ const {
 const select = new StringSelectMenuBuilder()
     .setCustomId('starter')
     .setPlaceholder('Which action you want to perform?')
-    .addOptions(new StringSelectMenuOptionBuilder()
-        .setLabel('Add a new collaborator to your team')
-        .setDescription('Add a new collaborator to your team to analyze the behavior')
-        .setValue('add'), new StringSelectMenuOptionBuilder()
-        .setLabel('Start the analysis of a collaborator')
-        .setDescription('Start the analysis questions. Select a collaborator to start ')
-        .setValue('start'),);
+    .addOptions(
+        new StringSelectMenuOptionBuilder()
+            .setLabel('Add a new collaborator to your team')
+            .setDescription('Add a new collaborator to your team to analyze the behavior')
+            .setValue('add'), 
+        new StringSelectMenuOptionBuilder()
+            .setLabel('Start the analysis of a collaborator')
+            .setDescription('Start the analysis questions. Select a collaborator to start ')
+            .setValue('start'), 
+        new StringSelectMenuOptionBuilder()
+            .setLabel('See statistics of a collaborator\'s analysis')
+            .setDescription('Statistics powered by Grafana. Select a collaborator to start ')
+            .setValue('graphic'));
 
 /**
  * This constant creates an action row that contains the select menu for the choose of the operation

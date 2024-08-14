@@ -10,12 +10,10 @@ const {commands, questions, gamma, smellsNames} = require('./utilities');
 const fs = require('fs');
 const {executeInteractionSelectMenu, executeInteractionButtons, executeChatInteraction, executeModalInteraction} = require("./toast.service");
 
-
-// the main function that manages the bot
+/**
+ * This is the main function that starts the bot
+ */
 async function main() {
-
-    // load the environment variables from the .env file
-    // and initialize the variables needed for the bot
     dotenv.config();
     let interactionInProgress = false;
     global.index = 0;
@@ -44,30 +42,22 @@ async function main() {
         });
 
         client.on('interactionCreate', async interaction => {
+            console.log("id " + interaction.id);
+            console.log("username " + interaction.user.username);
+            console.log("channelId " + interaction.channelId);
+            console.log("userId " + interaction.user.id);
 
-            console.log("id " + interaction.id)
-            console.log("username " + interaction.user.username)
-            console.log("channelId " + interaction.channelId)
-            console.log("userId " + interaction.user.id)
-
-            // if the interaction is a command (/start) and the bot is not already interacting with the user
             if (interaction.isChatInputCommand()) {
-                await executeChatInteraction(interaction)
-            }
-            // if the interaction is a button interaction
-            else if (interaction.isButton()) {
-                await executeInteractionButtons(smellValues, interaction)
-            }
-            // if the interaction is a select menu interaction
-            else if (interaction.isStringSelectMenu()) {
-                await executeInteractionSelectMenu(interaction)
+                await executeChatInteraction(interaction);
+            } else if (interaction.isButton()) {
+                await executeInteractionButtons(smellValues, interaction);
+            } else if (interaction.isStringSelectMenu()) {
+                await executeInteractionSelectMenu(interaction);
                 if (interaction.values[0] === 'add') {
                     await interaction.showModal(modal);
                 }
-            }
-            // else, if the interaction is a modal interaction (and so it is processing the data of the new collaborator)
-            else if (interaction.isModalSubmit()) {
-                await executeModalInteraction(interaction)
+            } else if (interaction.isModalSubmit()) {
+                await executeModalInteraction(interaction);
             }
         });
     } catch (error) {

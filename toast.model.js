@@ -70,7 +70,6 @@ async function getNextId() {
     }
 }
 
-//TODO
 /**
  * This function will update a map that contains all the smell values for a collaborator 
  * @param {*} interaction - discord.js object to manage the GUI interaction with the user
@@ -226,6 +225,4 @@ module.exports.saveNewCollaborator = saveNewCollaborator;
 module.exports.getCollaborators = getCollaborators;
 module.exports.getCollaborator = getCollaborator;
 module.exports.getUser = getUser;
-//module.exports.connectAndQuery = connectAndQuery;
-//module.exports.executeQuery = executeQuery;
 module.exports.connectToDatabase = connectToDatabase;
