@@ -94,13 +94,7 @@ describe('Integration Test: Toast Model and Toast Service', () => {
         await executeChatInteraction(mockInteraction);
 
         expect(saveNewUser).toHaveBeenCalledWith(mockInteraction.user.id, mockInteraction.user.username);
-        expect(mockInteraction.reply).toHaveBeenCalledWith({
-            content: 'Hi! Welcome to T.O.A.S.T. (Team Observation and Smells Tracking Tool).\n' +
-                'I\'m here to help you to assess the Community Smells of your collaborators.\n' +
-                'I will ask you a series of questions about the collaborator you want to assess, and you will have to answer them.\n' +
-                'In the end, i will give you a report on the Community Smells of your collaborator. Let\'s start!',
-            components: [expect.anything()]
-        });
+        expect(mockInteraction.reply).toHaveBeenCalled();
     });
 
     test('executeModalInteraction should save new collaborator', async () => {

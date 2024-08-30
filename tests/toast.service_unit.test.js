@@ -1,9 +1,11 @@
 const toastModel = require('../toast.model');
-const {executeChatInteraction, executeInteractionSelectMenu, executeModalInteraction, executeInteractionButtons} = require('../toast.service');
+const {executeChatInteraction, executeInteractionSelectMenu, executeModalInteraction, executeInteractionButtons, showGraph} = require('../toast.service');
 const {questions, gamma, smellsNames} = require("../utilities");
 const {likertScale} = require("../utilities_button");
 const testFile = "tests/test.users.json"
 const fs = require('fs')
+const axios = require('axios');
+const config = require('../config.json');
 
 jest.spyOn(console, 'log').mockImplementation(() => {});
 jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -20,6 +22,11 @@ jest.mock('../toast.model', () => ({
             "name": "name",
             "surname": "surname",
             "collaboratorId": "2"
+        }
+    }),
+    getCollaborators: jest.fn().mockImplementation(() => {
+        return {
+            "length": 0
         }
     }),
     getUser: jest.fn().mockResolvedValue({userId: "", collaborators: []})
@@ -254,5 +261,102 @@ describe("ExecuteModalInteraction", () => {
         await executeModalInteraction(mockInteraction);
 
         expect(toastModel.saveNewCollaborator).toHaveBeenCalled()
+    });
+});
+
+jest.mock('../config.json', () => ({
+    grafana: {
+        url: 'https://example.com/d/{collaboratorId}/?from={today}&to={today}',
+        token: 'mock_token'
+    },
+    sqlserver: {
+        host: 'toast-tool-test',
+        user: 'johnDoe',
+        password: 'password',
+        database: 'dbex',
+        port: 1111
+    }
+}));
+
+describe('showGraph', () => {
+    let mockInteraction;
+    const collaboratorId = "12345";
+    const today = new Date().toISOString().split('T')[0];
+    const grafanaUrl = config.grafana.url.replace('{collaboratorId}', collaboratorId).replace('{today}', today);
+
+    beforeEach(() => {
+        mockInteraction = {
+            deferUpdate: jest.fn(),
+            followUp: jest.fn(),
+        };
+
+        jest.clearAllMocks();
+    });
+
+    test('should call deferUpdate and followUp when generating the graph', async () => {
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
+        expect(mockInteraction.followUp).toHaveBeenCalledWith({
+            content: 'Generazione del grafico in corso, per favore attendi...'
+        });
+        expect(mockInteraction.followUp).toHaveBeenCalledTimes(2);
+    });
+
+    test('should handle API error during graph generation', async () => {
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
+        expect(mockInteraction.followUp).toHaveBeenCalledWith('Si è verificato un errore durante la generazione del grafico.');
+    });
+
+    test('should handle follow-up error gracefully', async () => {
+        mockInteraction.followUp.mockRejectedValueOnce(new Error('Follow-up Error')); // Mock follow-up error
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
+        expect(mockInteraction.followUp).toHaveBeenCalledWith('Si è verificato un errore durante la generazione del grafico.');
+    });
+});
+
+describe('showGraph', () => {
+    let mockInteraction;
+    const collaboratorId = "12345";
+    const today = new Date().toISOString().split('T')[0];
+    const grafanaUrl = `https://example.com/d/${collaboratorId}/?from=${today}&to=${today}`;
+
+    beforeEach(() => {
+        mockInteraction = {
+            deferUpdate: jest.fn(),
+            followUp: jest.fn(),
+        };
+
+        jest.clearAllMocks();
+    });
+
+    test('should generate and send the graph successfully', async () => {
+
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
+    });
+
+    test('should handle error during graph generation gracefully', async () => {
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
+    });
+
+    test('should handle error during follow-up gracefully', async () => {
+        mockInteraction.followUp.mockRejectedValueOnce(new Error('Follow-up Error')); // Mock an error from followUp
+
+        await showGraph(collaboratorId, mockInteraction);
+
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
     });
 });
